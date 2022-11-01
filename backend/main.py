@@ -18,13 +18,15 @@ async def getip(request):
 
 async def login_user_hotspot(request):
     try:
+        print("\n\n\nBắt đầu thu thập dữ liệu")
         dataRequest = await request.json()
         username = dataRequest["user"]
         password = dataRequest["password"]
         mac = dataRequest["mac-address"]
         ip = dataRequest["ip"]
 
-        print(username, password, mac, ip)
+        print("User: {username}\nIP: {ip}\nMAC: {mac}".format())
+        print("Đang login vào router")
         login = api.get_resource('/ip/hotspot/active')
         params = {
             'user': str(username),
@@ -33,6 +35,7 @@ async def login_user_hotspot(request):
             'ip': str(ip),
         }
         login.call('login', params)
+        print("Login thành công\n\n\n")
         return web.Response(text="Login thành công")
     except web.HTTPException as ex:
         print(ex)
