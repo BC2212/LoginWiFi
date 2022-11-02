@@ -53,24 +53,33 @@ async def login_user_hotspot(request):
 
     # return web.Response(text = dataReturn)
 
-app = web.Application()
-app.add_routes([web.get('/', handle),
-                web.get('/hello', hello),
-                web.get('/ip', getip),
-                web.post('/login', login_user_hotspot)])
+def addCorsToServer(app: web.Application):
+    cors = aiohttp_cors.setup(app, defaults={
+        "*": aiohttp_cors.ResourceOptions(
+            allow_credentials=True,
+            expose_headers="*",
+            allow_headers="*"
+        )
+    })
 
-cors = aiohttp_cors.setup(app, defaults={
-    "*": aiohttp_cors.ResourceOptions(
-        allow_credentials=True,
-        expose_headers="*",
-        allow_headers="*"
-    )
-})
+    for route in list(app.router.routes()):
+        cors.add(route)
 
-for route in list(app.router.routes()):
-    cors.add(route)
 
-connectToRouter()
 
-if __name__ == '__main__':
-    web.run_app(app,port=8000)
+async def login_wifi_app():
+    try:
+        global app
+        connectToRouter()
+        app = web.Application()
+        app.add_routes([web.get('/', handle),
+                    web.get('/hello', hello),
+                    web.get('/ip', getip),
+                    web.post('/login', login_user_hotspot)])
+        addCorsToServer(app)
+        return app
+    except Exception as ex:
+        print(ex)
+
+# if __name__ == '__main__':
+#     web.run_app(app,port=8000)
