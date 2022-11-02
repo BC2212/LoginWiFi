@@ -3,6 +3,15 @@ import socket
 import aiohttp_cors
 import routeros_api
 
+def connectToRouter():
+    global routerAPI
+    connection = routeros_api.RouterOsApiPool(
+    host='192.168.88.1',
+    username='wifiapi',
+    password='wifilogin',
+    plaintext_login=True)
+    routerAPI = connection.get_api()
+
 async def handle(request):
     text = "Hello, mình là Quỳnh"
     return web.Response(text=text)
@@ -18,16 +27,17 @@ async def getip(request):
 
 async def login_user_hotspot(request):
     try:
-        print("\n\n\nBắt đầu thu thập dữ liệu")
+        global routerAPI
+        print("\n\n\nĐã nhận được yêu cầu. Đang xử lý...")
         dataRequest = await request.json()
         username = dataRequest["user"]
         password = dataRequest["password"]
         mac = dataRequest["mac-address"]
         ip = dataRequest["ip"]
 
-        print("User: {username}\nIP: {ip}\nMAC: {mac}".format())
+        print("User: {username}\nIP: {ip}\nMAC: {mac}".format(username=username, ip=ip, mac=mac))
         print("Đang login vào router")
-        login = api.get_resource('/ip/hotspot/active')
+        login = routerAPI.get_resource('/ip/hotspot/active')
         params = {
             'user': str(username),
             'password': str(password),
@@ -60,12 +70,7 @@ cors = aiohttp_cors.setup(app, defaults={
 for route in list(app.router.routes()):
     cors.add(route)
 
-connection = routeros_api.RouterOsApiPool(
-    host='192.168.88.1',
-    username='wifiapi',
-    password='wifilogin',
-    plaintext_login=True)
-api = connection.get_api()
+connectToRouter()
 
 if __name__ == '__main__':
     web.run_app(app,port=8000)
