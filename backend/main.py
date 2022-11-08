@@ -2,21 +2,18 @@ from aiohttp import web
 import socket
 import aiohttp_cors
 import routeros_api
+import re
 
 def connectToRouter():
     global routerAPI
     connection = routeros_api.RouterOsApiPool(
-    host='192.168.88.1',
+    host='192.168.89.1',
     username='wifiapi',
     password='wifilogin',
     plaintext_login=True)
     routerAPI = connection.get_api()
 
 async def handle(request):
-    text = "Hello, mình là Quỳnh"
-    return web.Response(text=text)
-
-async def hello(request):
     text = "Hello, mình là Quỳnh"
     return web.Response(text=text)
 
@@ -35,7 +32,7 @@ async def login_user_hotspot(request):
         mac = dataRequest["mac-address"]
         ip = dataRequest["ip"]
 
-        print("User: {username}\nIP: {ip}\nMAC: {mac}".format(username=username, ip=ip, mac=mac))
+        print("User: {username}\nIP: {ip}\nMAC: {mac}\nPasswd: {passwd}".format(username=username, ip=ip, mac=mac, passwd=password))
         print("Đang login vào router")
         login = routerAPI.get_resource('/ip/hotspot/active')
         params = {
@@ -46,12 +43,16 @@ async def login_user_hotspot(request):
         }
         login.call('login', params)
         print("Login thành công\n\n\n")
-        return web.Response(text="Login thành công")
-    except web.HTTPException as ex:
-        print(ex)
-        return web.Response(text=str(ex))
+        return web.HTTPAccepted(text="Login thành công")
+    except Exception as ex:
+        # err = identifyError(str(ex).split("\"")[1])
+        # print(ex)
+        err = identifyError(str(ex))
+        return web.HTTPNonAuthoritativeInformation(text=str(err))
 
-    # return web.Response(text = dataReturn)
+def identifyError(err: str):
+    if (re.search(".unknown host IP .*", err)):
+        return "Địa chỉ IP không tồn tại."
 
 def addCorsToServer(app: web.Application):
     cors = aiohttp_cors.setup(app, defaults={
@@ -66,20 +67,37 @@ def addCorsToServer(app: web.Application):
         cors.add(route)
 
 
-
-async def login_wifi_app():
+def login_wifi_app():
     try:
         global app
         connectToRouter()
         app = web.Application()
         app.add_routes([web.get('/', handle),
-                    web.get('/hello', hello),
                     web.get('/ip', getip),
                     web.post('/login', login_user_hotspot)])
         addCorsToServer(app)
-        return app
+        web.run_app(app,port=8000)
     except Exception as ex:
         print(ex)
 
-# if __name__ == '__main__':
-#     web.run_app(app,port=8000)
+app = web.Application()
+app.add_routes([web.get('/', handle),
+            web.get('/ip', getip),
+            web.post('/login', login_user_hotspot)])
+
+cors = aiohttp_cors.setup(app, defaults={
+    "*": aiohttp_cors.ResourceOptions(
+        allow_credentials=True,
+        expose_headers="*",
+        allow_headers="*"
+    )
+})
+
+for route in list(app.router.routes()):
+    cors.add(route)
+
+connectToRouter()
+
+if __name__ == '__main__':
+    # login_wifi_app()
+    web.run_app(app, port=8000)
