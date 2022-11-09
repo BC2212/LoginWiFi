@@ -142,7 +142,7 @@ def identifyError(err: str) -> str:
         if (re.search(i['reason'], err)):
             return i['notify']
         else:
-            return "Undefined error"
+            return "Lỗi không xác định"
 
 app = web.Application()
 app.add_routes([web.get('/', handle),
