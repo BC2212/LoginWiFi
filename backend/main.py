@@ -141,6 +141,8 @@ def identifyError(err: str) -> str:
     for i in errList:
         if (re.search(i['reason'], err)):
             return i['notify']
+        else:
+            return "Undefined error"
 
 app = web.Application()
 app.add_routes([web.get('/', handle),
