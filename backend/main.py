@@ -13,6 +13,7 @@ PASSWORD = 'wifilogin'
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%y-%m-%d %H:%M:%S', level=logging.DEBUG)
 
+
 def connectToRouter(host: str, username: str, password: str):
     """Dùng để kết nối đến Router Mikrotik
 
@@ -100,6 +101,7 @@ async def loginHotspot(request):
         logging.info('Login thành công!')
         return web.HTTPAccepted(text="Login thành công")
     except Exception as ex:
+        # err = str(ex)
         err = identifyError(str(ex))
         logging.error(err)
         return web.HTTPNonAuthoritativeInformation(text=str(err))
@@ -114,8 +116,31 @@ def identifyError(err: str) -> str:
     Returns:
         str: Trả về nguyên nhân gây lỗi
     """
-    if (re.search(".unknown host IP .*", err)):
-        return "Địa chỉ IP không tồn tại."
+    errList = [
+        {
+            "reason": ".invalid username or password.*",
+            "notify": "Sai username hoặc password"
+        },
+        {
+            "reason": ".unknown host IP .*",
+            "notify": "Địa chỉ IP không tồn tại"
+        },
+        {
+            "reason": ".invalid value for argument ip.*",
+            "notify": "Địa chỉ IP không hợp lệ"
+        },
+        {
+            "reason": ".wrong MAC provided.*",
+            "notify": "Sai địa chỉ MAC"
+        },
+        {
+            "reason": ".invalid value of mac-address, mac address required.*",
+            "notify": "Địa chỉ MAC không hợp lệ"
+        }
+    ]
+    for i in errList:
+        if (re.search(i['reason'], err)):
+            return i['notify']
 
 app = web.Application()
 app.add_routes([web.get('/', handle),
@@ -128,6 +153,8 @@ cors = aiohttp_cors.setup(app, defaults={
         expose_headers="*",
         allow_headers="*"
     )
+
+
 })
 
 for route in list(app.router.routes()):
