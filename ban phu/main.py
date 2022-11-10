@@ -99,12 +99,12 @@ async def loginHotspot(request):
         login.call('login', params)
 
         logging.info('Login thành công!')
-        return web.HTTPAccepted(text="Login thành công")
+        return web.HTTPOk()
     except Exception as ex:
-        # err = str(ex)
+        # print(ex)
         err = identifyError(str(ex))
         logging.error(err)
-        return web.HTTPNonAuthoritativeInformation(text=str(err))
+        return web.HTTPInternalServerError(text=str(err))
 
 
 def identifyError(err: str) -> str:
@@ -138,11 +138,11 @@ def identifyError(err: str) -> str:
             "reason": "Địa chỉ MAC không hợp lệ"
         }
     ]
+    
     for i in errList:
         if (re.search(i['errStr'], err)):
             return i['reason']
-        else:
-            return "Lỗi không xác định"
+    return "Lỗi không xác định"
 
 app = web.Application()
 app.add_routes([web.get('/', handle),

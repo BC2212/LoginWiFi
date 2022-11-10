@@ -4,6 +4,7 @@ import aiohttp_cors                 # Thay đổi quyền truy cập khi client 
 import routeros_api                 # Gọi API từ Router Mikrotik
 import re                           # RegEx - lọc chuỗi
 import logging                      # Tạo log
+from module.APIException import APIException
 
 ROUTER = '192.168.89.1'
 USERNAME = 'wifiapi'
@@ -95,54 +96,19 @@ async def loginHotspot(request):
             'mac-address': str(mac),
             'ip': str(ip),
         }
+
         # Gọi lệnh đăng nhập vào router
         login.call('login', params)
 
+        # Thông báo nếu đăng nhập thành công
         logging.info('Login thành công!')
-        return web.HTTPAccepted(text="Login thành công")
+        return web.HTTPOk(text="Login thành công")
     except Exception as ex:
-        # err = str(ex)
-        err = identifyError(str(ex))
+        # Kiểm tra lý do gây lỗi
+        err = APIException.identify(str(ex))
         logging.error(err)
-        return web.HTTPNonAuthoritativeInformation(text=str(err))
+        return web.HTTPInternalServerError(text=str(err))
 
-
-def identifyError(err: str) -> str:
-    """Xác định nguyên nhân gây lỗi khi đăng nhập không thành công
-
-    Args:
-        err (str): Thông báo lỗi được truyền vào
-
-    Returns:
-        str: Trả về nguyên nhân gây lỗi
-    """
-    errList = [
-        {
-            "errStr": ".invalid username or password.*",
-            "reason": "Sai username hoặc password"
-        },
-        {
-            "errStr": ".unknown host IP .*",
-            "reason": "Địa chỉ IP không tồn tại"
-        },
-        {
-            "errStr": ".invalid value for argument ip.*",
-            "reason": "Địa chỉ IP không hợp lệ"
-        },
-        {
-            "errStr": ".wrong MAC provided.*",
-            "reason": "Sai địa chỉ MAC"
-        },
-        {
-            "errStr": ".invalid value of mac-address, mac address required.*",
-            "reason": "Địa chỉ MAC không hợp lệ"
-        }
-    ]
-    for i in errList:
-        if (re.search(i['errStr'], err)):
-            return i['reason']
-        else:
-            return "Lỗi không xác định"
 
 app = web.Application()
 app.add_routes([web.get('/', handle),
@@ -156,7 +122,6 @@ cors = aiohttp_cors.setup(app, defaults={
         allow_headers="*"
     )
 
-
 })
 
 for route in list(app.router.routes()):
@@ -165,4 +130,4 @@ for route in list(app.router.routes()):
 connectToRouter(host=ROUTER, username=USERNAME, password=PASSWORD)
 
 if __name__ == '__main__':
-    web.run_app(app, port=8000)
+    web.run_app(app, port=8080)
