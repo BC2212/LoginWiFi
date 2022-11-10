@@ -118,29 +118,29 @@ def identifyError(err: str) -> str:
     """
     errList = [
         {
-            "reason": ".invalid username or password.*",
-            "notify": "Sai username hoặc password"
+            "errStr": ".invalid username or password.*",
+            "reason": "Sai username hoặc password"
         },
         {
-            "reason": ".unknown host IP .*",
-            "notify": "Địa chỉ IP không tồn tại"
+            "errStr": ".unknown host IP .*",
+            "reason": "Địa chỉ IP không tồn tại"
         },
         {
-            "reason": ".invalid value for argument ip.*",
-            "notify": "Địa chỉ IP không hợp lệ"
+            "errStr": ".invalid value for argument ip.*",
+            "reason": "Địa chỉ IP không hợp lệ"
         },
         {
-            "reason": ".wrong MAC provided.*",
-            "notify": "Sai địa chỉ MAC"
+            "errStr": ".wrong MAC provided.*",
+            "reason": "Sai địa chỉ MAC"
         },
         {
-            "reason": ".invalid value of mac-address, mac address required.*",
-            "notify": "Địa chỉ MAC không hợp lệ"
+            "errStr": ".invalid value of mac-address, mac address required.*",
+            "reason": "Địa chỉ MAC không hợp lệ"
         }
     ]
     for i in errList:
-        if (re.search(i['reason'], err)):
-            return i['notify']
+        if (re.search(i['errStr'], err)):
+            return i['reason']
         else:
             return "Lỗi không xác định"
 
