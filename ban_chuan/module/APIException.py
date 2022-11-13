@@ -19,8 +19,12 @@ class APIException:
             "reason": "Sai địa chỉ MAC"
         },
         {
-            "errStr": ".invalid value of mac-address, mac address required.*",
+            "errStr": ".invalid value of mac-address.*",
             "reason": "Địa chỉ MAC không hợp lệ"
+        },
+        {
+            "errStr": ".target machine actively refused it.*",
+            "reason": "Sai hostname hoặc địa chỉ IP của router"
         }
     ]
 

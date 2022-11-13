@@ -1,40 +1,20 @@
 from aiohttp import web             # Viết và gọi API
 import socket                       # Lấy MAC và IP
 import aiohttp_cors                 # Thay đổi quyền truy cập khi client gọi API
-import routeros_api                 # Gọi API từ Router Mikrotik
-import re                           # RegEx - lọc chuỗi
 import logging                      # Tạo log
 from module.APIException import APIException
+from module.RouterMikrotik import RouterMikrotik
+from module.model.UserHotspot import UserHotspot
 
 ROUTER = '192.168.89.1'
 USERNAME = 'wifiapi'
 PASSWORD = 'wifilogin'
 
+routerAPI = RouterMikrotik(host=ROUTER, username=USERNAME, password=PASSWORD)
+
 # Format định dạng cơ bản của Log
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%y-%m-%d %H:%M:%S', level=logging.DEBUG)
-
-
-def connectToRouter(host: str, username: str, password: str):
-    """Dùng để kết nối đến Router Mikrotik
-
-    Args:
-        host (str): Hostname hoặc địa chỉ IP của router
-        username (str): Tài khoản để kết nối đến router
-        password (str): Mật khẩu của tài khoản được kết nối đến router
-    """
-
-    # Tạo global var
-    global routerAPI
-    # Tạo kết nối đến router với các parameter lấy được khi hàm được gọi
-    connection = routeros_api.RouterOsApiPool(
-        host=host,
-        username=username,
-        password=password,
-        plaintext_login=True)
-    # Kết nối
-    routerAPI = connection.get_api()
-
 
 async def handle(request):
     text = "Hello, mình là Quỳnh"
@@ -79,26 +59,13 @@ async def loginHotspot(request):
         # Trích xuất dữ liệu của request từ json thành dict
         dataRequest = await request.json()
         # Tách dữ liệu thành các biến
-        username = dataRequest["user"]
-        password = dataRequest["password"]
-        mac = dataRequest["mac-address"]
-        ip = dataRequest["ip"]
-
-        logging.info("User: {username}\tIP: {ip}\tMAC: {mac}".format(
-            username=username, ip=ip, mac=mac, passwd=password))
-        logging.info("Đang login vào router")
-
-        # Lấy resource từ router
-        login = routerAPI.get_resource('/ip/hotspot/active')
-        params = {
-            'user': str(username),
-            'password': str(password),
-            'mac-address': str(mac),
-            'ip': str(ip),
-        }
-
-        # Gọi lệnh đăng nhập vào router
-        login.call('login', params)
+        user = UserHotspot(
+            ip=dataRequest["ip"],
+            mac=dataRequest["mac-address"],
+            username=dataRequest["user"],
+            password=dataRequest["password"]
+        )
+        routerAPI.login(user=user)
 
         # Thông báo nếu đăng nhập thành công
         logging.info('Login thành công!')
@@ -121,13 +88,10 @@ cors = aiohttp_cors.setup(app, defaults={
         expose_headers="*",
         allow_headers="*"
     )
-
 })
 
 for route in list(app.router.routes()):
     cors.add(route)
-
-connectToRouter(host=ROUTER, username=USERNAME, password=PASSWORD)
 
 if __name__ == '__main__':
     web.run_app(app, port=8080)
