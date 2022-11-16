@@ -1,87 +1,29 @@
 from aiohttp import web             # Viết và gọi API
-import socket                       # Lấy MAC và IP
 import aiohttp_cors                 # Thay đổi quyền truy cập khi client gọi API
-import logging                      # Tạo log
-from module.APIException import APIException
+
+import config
 from module.RouterMikrotik import RouterMikrotik
-from module.model.UserHotspot import UserHotspot
+from module.Wifi import Wifi
 
-ROUTER = '192.168.89.1'
-USERNAME = 'wifiapi'
-PASSWORD = 'wifilogin'
+# Khởi tạo object routerAPI và kết nối đến router
+routerAPI = RouterMikrotik(
+    host=config.ROUTER,
+    username=config.USERNAME,
+    password=config.PASSWORD
+)
 
-routerAPI = RouterMikrotik(host=ROUTER, username=USERNAME, password=PASSWORD)
+# Khởi tạo object wifi với tham số truyền vào là object routerAPI
+# Object wifi được dùng để xử lý request từ client
+wifi = Wifi(router=routerAPI)
 
-# Format định dạng cơ bản của Log
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
-                    datefmt='%y-%m-%d %H:%M:%S', level=logging.DEBUG)
-
-async def handle(request):
-    text = "Hello, mình là Quỳnh"
-    return web.Response(text=text)
-
-
-async def getIP(request):
-    """Lấy địa chỉ IP
-
-    Args:
-        request (_type_): HTTP Request
-
-    Returns:
-        Response: Trả về địa chỉ IP qua HTTP Response
-    """
-    # Lấy tên thiết bị
-    try:
-        hostname = socket.gethostname()
-        # Lấy địa chỉ IP thông qua tên thiết bị
-        ip = socket.gethostbyname(hostname)
-        return web.Response(text=ip)
-    except Exception as ex:
-        return web.HTTPError()
-
-
-async def loginHotspot(request):
-    """Đăng nhập vào router để client có thể kết nối mạng
-
-    Args:
-        request (_type_): HTTP Request
-
-    Returns:
-        _type_: Trả về kết quả đăng nhập thành công hay không.
-                Nếu không trả về lỗi.
-    """
-    try:
-        global routerAPI
-
-        print('----------------------')
-        logging.info("Đã nhận được yêu cầu. Đang xử lý...")
-
-        # Trích xuất dữ liệu của request từ json thành dict
-        dataRequest = await request.json()
-        # Tách dữ liệu thành các biến
-        user = UserHotspot(
-            ip=dataRequest["ip"],
-            mac=dataRequest["mac-address"],
-            username=dataRequest["user"],
-            password=dataRequest["password"]
-        )
-        routerAPI.login(user=user)
-
-        # Thông báo nếu đăng nhập thành công
-        logging.info('Login thành công!')
-        return web.HTTPOk(text="Login thành công")
-    except Exception as ex:
-        # Kiểm tra lý do gây lỗi
-        err = APIException.identify(str(ex))
-        logging.error(err)
-        return web.HTTPInternalServerError(text=str(err))
-
-
+# Khởi tạo webapp
 app = web.Application()
-app.add_routes([web.get('/', handle),
-                web.get('/ip', getIP),
-                web.post('/login', loginHotspot)])
+app.add_routes([
+    web.get('/', wifi.getHomepage),
+    web.post('/login', wifi.loginHotspot),
+])
 
+# Khởi tạo Cross-Origin Resource Sharing (cors)
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
         allow_credentials=True,
@@ -90,6 +32,7 @@ cors = aiohttp_cors.setup(app, defaults={
     )
 })
 
+# Thêm cors vào từng route
 for route in list(app.router.routes()):
     cors.add(route)
 
