@@ -1,7 +1,6 @@
 from typing import Any
 import routeros_api                 # Gọi API từ Router Mikrotik
 from .model.UserHotspot import UserHotspot
-from .APIException import APIException
 
 class RouterMikrotik:
     def __init__(self, host: str, username: str, password: str):
