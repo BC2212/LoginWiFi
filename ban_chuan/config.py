@@ -1,3 +1,3 @@
-ROUTER = '192.168.89.1'
+ROUTER = '192.168.10.6'
 USERNAME = 'wifiapi'
 PASSWORD = 'wifilogin'

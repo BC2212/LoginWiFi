@@ -59,6 +59,9 @@ class Wifi:
                 username=dataRequest["user"],
                 password=dataRequest["password"]
             )
+
+            logging.info(f"Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}")
+
             self.router.login(user=user)
 
             # Thông báo nếu đăng nhập thành công
