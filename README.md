@@ -11,6 +11,7 @@
 ## Yêu cầu
 
 Project có thể hoạt động trên các hệ điều hành Windows, Unix có cài đặt[ Python3](https://www.python.org/downloads/).
+
 Cần sử dụng cài đặt các module sau:
 - [Aiohttp](https://docs.aiohttp.org/en/stable/) - Package dùng để dựng server
 - [Aiohttp_cors](https://github.com/aio-libs/aiohttp-cors) - Kiểm soát truy cập tài nguyên
@@ -29,6 +30,8 @@ pip install -r requirements.txt -y
 
 ## Khởi chạy
 Trước tiên cần phải khởi tạo các tham số để kết nối đến router Mikrotik. Tạo file config.py tại đường dẫn thư mục với nội dung:
+```
 ROUTER = 'địa chỉ IP'
 USERNAME = 'tên đăng nhập'
 PASSWORD = 'mật khẩu'
+```
