@@ -80,6 +80,14 @@ class Wifi:
             return web.HTTPInternalServerError(text=str(err))
 
     async def getMemberList(self, request) -> 'web.HTTPException':
+        """Lấy danh sách thành viên hiện tại của câu lạc bộ
+
+        Args:
+            request (_type_): HTTP Request
+
+        Returns:
+            web.HTTPException: Trả về số lượng, danh sách các thành viên hiện tại
+        """
         request = LRequest(url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien")
         result = dict()
 
