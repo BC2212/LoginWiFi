@@ -8,6 +8,7 @@ from aiohttp import web             # Viết và gọi API
 from .APIException import APIException
 from .model.UserHotspot import UserHotspot
 from .RouterMikrotik import RouterMikrotik
+from .LHURequest import LRequest
 
 # Format định dạng cơ bản của Log
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
@@ -78,6 +79,40 @@ class Wifi:
             logging.error(err)
             return web.HTTPInternalServerError(text=str(err))
 
+    async def getMemberList(self, request) -> 'web.HTTPException':
+        request = LRequest(url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien")
+        result = dict()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=request.url) as response:
+                requestData = await response.json()
+                listUsers = requestData['data']
+                count = len(listUsers)
+
+                result['SoLuongThanhVien'] = count
+                result['DanhSachThanhVien'] = listUsers
+
+        return web.HTTPOk(body=json.dumps(result), content_type="application/json")
+
+    async def getTotalNumberOfMembers(self, request) -> 'web.HTTPException':
+        """Lấy tổng số lượng thành viên hiện tại
+
+        Args:
+            request (_type_): HTTP Request
+
+        Returns:
+            web.HTTPException: Trả về tổng số lượng thành viên hiện tại
+        """
+        request = LRequest(url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien")
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=request.url) as response:
+                requestData = await response.json()
+                listUsers = requestData["data"]
+                count = len(listUsers)
+        
+        return web.HTTPOk(text=str(count))
+
     async def getLoggonListByDate(self, request) -> 'web.HTTPException':
         """Lấy danh sách các thành viên đã đăng nhập theo ngày
 
@@ -94,18 +129,14 @@ class Wifi:
             requestData = await request.json()
             date = requestData['Date']
 
-        url = "https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate"
-        contentType = "application/json"
-        accecpt = "application/json"
-        headers = {
-            'accept': accecpt,
-            'content-type': contentType
-        }
+        request = LRequest(
+            url="https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate",
+        )
 
         keyTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
 
         async with aiohttp.ClientSession() as session:
-            async with session.post(url=url, headers=headers, json={'Date': date}) as response:
+            async with session.post(url=request.url, json={'Date': date}) as response:
                 requestData = await response.json()
                 users = requestData['data']
                 result = dict()
@@ -116,7 +147,7 @@ class Wifi:
                     _date = user.pop("ThoiGian")
                     date = _date.split("T")[0]
                     user['Ngay'] = date
-                
+
                     _time = user.pop("ThoiGianDiemDanh")
                     loggonTime = datetime.strptime(_time, '%H:%M:%S').time()
                     user['Gio'] = str(loggonTime)

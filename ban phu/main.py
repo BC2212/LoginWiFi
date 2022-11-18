@@ -147,6 +147,61 @@ def identifyError(err: str) -> str:
             return i['reason']
     return "Lỗi không xác định"
 
+async def getTotalNumberOfMembers(request) -> 'web.HTTPException':
+        """Lấy tổng số lượng thành viên hiện tại
+
+        Args:
+            request (_type_): HTTP Request
+
+        Returns:
+            web.HTTPException: Trả về tổng số lượng thành viên hiện tại
+        """
+        url = "https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien"
+        contentType = "application/json"
+        accecpt = "application/json"
+        headers = {
+            'accept': accecpt,
+            'content-type': contentType
+        }
+        result = dict()
+        
+        async with aiohttp.ClientSession() as session:
+            async with session.get(url=request.url) as response:
+                requestData = await response.json()
+                listUsers = requestData["data"]
+                count = len(listUsers)
+        
+        return web.HTTPOk(text=str(count))
+
+async def getMemberList(request) -> 'web.HTTPException':
+    """Lấy danh sách thành viên hiện tại của câu lạc bộ
+
+    Args:
+        request (_type_): HTTP Request
+
+    Returns:
+        web.HTTPException: Trả về số lượng, danh sách các thành viên hiện tại
+    """
+    url = "https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien"
+    contentType = "application/json"
+    accecpt = "application/json"
+    headers = {
+        'accept': accecpt,
+        'content-type': contentType
+    }
+    result = dict()
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url=url, headers=headers) as response:
+            requestData = await response.json()
+            listUsers = requestData['data']
+            count = len(listUsers)
+
+            result['SoLuongThanhVien'] = count
+            result['DanhSachThanhVien'] = listUsers
+
+    return web.HTTPOk(body=json.dumps(result), content_type="application/json")
+
 async def getLoggonListByDate(request) -> 'web.HTTPException':
     """Lấy danh sách các thành viên đã đăng nhập theo ngày
 
@@ -201,11 +256,14 @@ async def getLoggonListByDate(request) -> 'web.HTTPException':
     return web.HTTPOk(body=json.dumps(result), content_type="application/json")
 
 app = web.Application()
-app.add_routes([web.get('/', handle),
-                web.get('/ip', getIP),
-                web.post('/login', loginHotspot),
-                web.get('/lay-danh-sach-dang-nhap/{date}', getLoggonListByDate),
-                web.post('/lay-danh-sach-dang-nhap', getLoggonListByDate)])
+app.add_routes([
+    web.get('/', handle),
+    web.get('/ip', getIP),
+    web.post('/login', loginHotspot),
+    web.get('/lay-danh-sach-dang-nhap/{date}', getLoggonListByDate),
+    web.post('/lay-danh-sach-dang-nhap', getLoggonListByDate),
+    web.get('/lay-danh-sach-thanh-vien', getMemberList)
+])
 
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
