@@ -176,16 +176,29 @@ async def getLoggonListByDate(request) -> 'web.HTTPException':
         async with session.post(url=url, headers=headers, json={'Date': date}) as response:
             requestData = await response.json()
             users = requestData['data']
+            result = dict()
+            result['SoLuongCoMat'] = len(users)
+            countTre = 0
 
             for user in users:
-                loggonTime = datetime.strptime(
-                    user['ThoiGianDiemDanh'], '%H:%M:%S').time()
+                _date = user.pop("ThoiGian")
+                date = _date.split("T")[0]
+                user['Ngay'] = date
+                
+                _time = user.pop("ThoiGianDiemDanh")
+                loggonTime = datetime.strptime(_time, '%H:%M:%S').time()
+                user['Gio'] = str(loggonTime)
+
                 if loggonTime > keyTime:
                     user['DiTre'] = True
+                    countTre += 1
                 else:
                     user['DiTre'] = False
 
-    return web.HTTPOk(body=json.dumps(users), content_type="application/json")
+            result['SoLuongTre'] = countTre
+            result['DanhSachCoMat'] = users
+
+    return web.HTTPOk(body=json.dumps(result), content_type="application/json")
 
 app = web.Application()
 app.add_routes([web.get('/', handle),
