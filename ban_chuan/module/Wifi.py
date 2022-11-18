@@ -1,5 +1,8 @@
 import socket                       # Lấy MAC và IP
-import logging
+import logging                      # Hiển thị thông báo trên Terminal
+import aiohttp
+import json
+from datetime import datetime
 
 from aiohttp import web             # Viết và gọi API
 from .APIException import APIException
@@ -10,15 +13,16 @@ from .RouterMikrotik import RouterMikrotik
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
                     datefmt='%y-%m-%d %H:%M:%S', level=logging.DEBUG)
 
+
 class Wifi:
     def __init__(self, router: 'RouterMikrotik') -> None:
         self.router = router
 
-    async def getHomepage(self, request):
+    async def getHomepage(self, request) -> 'web.HTTPException':
         text = "Đây là homepage clb mạng LHU-CISCO"
         return web.HTTPOk(text=text)
 
-    async def getIP(self, request):
+    async def getIP(self, request) -> 'web.HTTPException':
         """Lấy địa chỉ IP
 
         Args:
@@ -36,7 +40,7 @@ class Wifi:
         except Exception as ex:
             return web.HTTPError()
 
-    async def loginHotspot(self, request):
+    async def loginHotspot(self, request) -> 'web.HTTPException':
         """Đăng nhập vào router để client có thể kết nối mạng
 
         Args:
@@ -60,7 +64,8 @@ class Wifi:
                 password=dataRequest["password"]
             )
 
-            logging.info(f"Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}")
+            logging.info(
+                f"Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}")
 
             self.router.login(user=user)
 
@@ -72,3 +77,44 @@ class Wifi:
             err = APIException.identify(str(ex))
             logging.error(err)
             return web.HTTPInternalServerError(text=str(err))
+
+    async def getLoggonListByDate(self, request) -> 'web.HTTPException':
+        """Lấy danh sách các thành viên đã đăng nhập theo ngày
+
+        Args:
+            request (_type_): HTTP Request. Date có format là HH:mm:ss
+
+        Returns:
+            web.HTTPException: Trả về danh sách các thành viên đã đăng nhập, có check đi trễ
+        """
+
+        if request.method == "GET":
+            date = str(request.match_info['date'])
+        else:
+            requestData = await request.json()
+            date = requestData['Date']
+
+        url = "https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate"
+        contentType = "application/json"
+        accecpt = "application/json"
+        headers = {
+            'accept': accecpt,
+            'content-type': contentType
+        }
+
+        keyTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
+
+        async with aiohttp.ClientSession() as session:
+            async with session.post(url=url, headers=headers, json={'Date': date}) as response:
+                requestData = await response.json()
+                users = requestData['data']
+
+                for user in users:
+                    loggonTime = datetime.strptime(
+                        user['ThoiGianDiemDanh'], '%H:%M:%S').time()
+                    if loggonTime > keyTime:
+                        user['DiTre'] = True
+                    else:
+                        user['DiTre'] = False
+
+        return web.HTTPOk(body=json.dumps(users), content_type="application/json")

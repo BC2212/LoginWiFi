@@ -21,6 +21,8 @@ app = web.Application()
 app.add_routes([
     web.get('/', wifi.getHomepage),
     web.post('/login', wifi.loginHotspot),
+    web.get('/lay-danh-sach-dang-nhap/{date}', wifi.getLoggonListByDate),
+    web.post('/lay-danh-sach-dang-nhap', wifi.getLoggonListByDate)
 ])
 
 # Khởi tạo Cross-Origin Resource Sharing (cors)

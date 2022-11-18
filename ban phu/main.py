@@ -1,13 +1,16 @@
 from aiohttp import web             # Viết và gọi API
+import aiohttp
 import socket                       # Lấy MAC và IP
 import aiohttp_cors                 # Thay đổi quyền truy cập khi client gọi API
 import routeros_api                 # Gọi API từ Router Mikrotik
 import re                           # RegEx - lọc chuỗi
 import logging                      # Tạo log
+from datetime import datetime
+import json
 
-ROUTER = '192.168.89.1'
-USERNAME = 'wifiapi'
-PASSWORD = 'wifilogin'
+ROUTER = '172.16.2.1'
+USERNAME = 'wifilogin'
+PASSWORD = 'wifiapi'
 
 # Format định dạng cơ bản của Log
 logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s',
@@ -144,10 +147,52 @@ def identifyError(err: str) -> str:
             return i['reason']
     return "Lỗi không xác định"
 
+async def getLoggonListByDate(request) -> 'web.HTTPException':
+    """Lấy danh sách các thành viên đã đăng nhập theo ngày
+
+    Args:
+        request (_type_): HTTP Request. Date có format là HH:mm:ss
+
+    Returns:
+        web.HTTPException: Trả về danh sách các thành viên đã đăng nhập, có check đi trễ
+    """
+    if request.method == "GET":
+        date = str(request.match_info['date'])
+    else:
+        requestData = await request.json()
+        date = requestData['Date']
+
+    url = "https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate"
+    contentType = "application/json"
+    accecpt = "application/json"
+    headers = {
+        'accept': accecpt,
+        'content-type': contentType
+    }
+
+    keyTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
+
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=url, headers=headers, json={'Date': date}) as response:
+            requestData = await response.json()
+            users = requestData['data']
+
+            for user in users:
+                loggonTime = datetime.strptime(
+                    user['ThoiGianDiemDanh'], '%H:%M:%S').time()
+                if loggonTime > keyTime:
+                    user['DiTre'] = True
+                else:
+                    user['DiTre'] = False
+
+    return web.HTTPOk(body=json.dumps(users), content_type="application/json")
+
 app = web.Application()
 app.add_routes([web.get('/', handle),
                 web.get('/ip', getIP),
-                web.post('/login', loginHotspot)])
+                web.post('/login', loginHotspot),
+                web.get('/lay-danh-sach-dang-nhap/{date}', getLoggonListByDate),
+                web.post('/lay-danh-sach-dang-nhap', getLoggonListByDate)])
 
 cors = aiohttp_cors.setup(app, defaults={
     "*": aiohttp_cors.ResourceOptions(
@@ -155,8 +200,6 @@ cors = aiohttp_cors.setup(app, defaults={
         expose_headers="*",
         allow_headers="*"
     )
-
-
 })
 
 for route in list(app.router.routes()):
