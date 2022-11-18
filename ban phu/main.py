@@ -178,7 +178,7 @@ async def getLoggonListByDate(request) -> 'web.HTTPException':
             users = requestData['data']
             result = dict()
             result['SoLuongCoMat'] = len(users)
-            countTre = 0
+            countLate = 0
 
             for user in users:
                 _date = user.pop("ThoiGian")
@@ -191,11 +191,11 @@ async def getLoggonListByDate(request) -> 'web.HTTPException':
 
                 if loggonTime > keyTime:
                     user['DiTre'] = True
-                    countTre += 1
+                    countLate += 1
                 else:
                     user['DiTre'] = False
 
-            result['SoLuongTre'] = countTre
+            result['SoLuongTre'] = countLate
             result['DanhSachCoMat'] = users
 
     return web.HTTPOk(body=json.dumps(result), content_type="application/json")
