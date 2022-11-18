@@ -26,3 +26,9 @@ Cài đặt các package cần thiết qua file requirements.txt.
 cd LoginWiFi
 pip install -r requirements.txt -y
 ```
+
+## Khởi chạy
+Trước tiên cần phải khởi tạo các tham số để kết nối đến router Mikrotik. Tạo file config.py tại đường dẫn thư mục với nội dung:
+ROUTER = 'địa chỉ IP'
+USERNAME = 'tên đăng nhập'
+PASSWORD = 'mật khẩu'
