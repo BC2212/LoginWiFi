@@ -141,17 +141,17 @@ class Wifi:
             url="https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate",
         )
 
-        keyTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
+        lateTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
+        checkinTime = datetime.strptime('18:00:00', '%H:%M:%S').time()
 
         async with aiohttp.ClientSession() as session:
             async with session.post(url=request.url, json={'Date': date}) as response:
                 requestData = await response.json()
                 users = requestData['data']
                 result = dict()
-                result['SoLuongCoMat'] = len(users)
                 countLate = 0
 
-                for user in users:
+                for user in users[:]:
                     _date = user.pop("ThoiGian")
                     date = _date.split("T")[0]
                     user['Ngay'] = date
@@ -160,12 +160,16 @@ class Wifi:
                     loggonTime = datetime.strptime(_time, '%H:%M:%S').time()
                     user['Gio'] = str(loggonTime)
 
-                    if loggonTime > keyTime:
+                    if loggonTime < checkinTime:
+                        users.remove(user)
+                        continue
+                    elif loggonTime > lateTime:
                         user['DiTre'] = True
                         countLate += 1
                     else:
                         user['DiTre'] = False
 
+                result['SoLuongCoMat'] = len(users)
                 result['SoLuongTre'] = countLate
                 result['DanhSachCoMat'] = users
         return web.HTTPOk(body=json.dumps(result), content_type="application/json")
