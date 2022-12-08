@@ -125,7 +125,7 @@ class Wifi:
         """Lấy danh sách các thành viên đã đăng nhập theo ngày
 
         Args:
-            request (_type_): HTTP Request. Date có format là HH:mm:ss
+            request (_type_): HTTP Request. Date có format là yyyy-MM-dd
 
         Returns:
             web.HTTPException: Trả về danh sách các thành viên đã đăng nhập, có check đi trễ
