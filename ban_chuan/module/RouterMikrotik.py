@@ -1,6 +1,7 @@
-from typing import Any
+from typing import Any, List, Dict
 import routeros_api                 # Gọi API từ Router Mikrotik
 from .model.UserHotspot import UserHotspot
+import json
 
 class RouterMikrotik:
     def __init__(self, host: str, username: str, password: str):
@@ -49,5 +50,34 @@ class RouterMikrotik:
 
             # Gọi lệnh đăng nhập vào router
             login.call('login', params)
+        except Exception as ex:
+            raise ex
+
+    def createHotspotUser(self):
+        try:
+            init = self.api.get_resource('ip/hotspot/user')
+            params = {
+                'name': 'test',
+                'password': 'test',
+                'profile': 'default'
+            }
+            init.call('add', params)
+        except Exception as ex:
+            print(ex)
+
+    def getHotspotUserList(self) -> List[Dict]:
+        try:
+            api = self.api.get_resource('ip/hotspot/user')
+            userList = api.call('print')
+            return userList
+        except Exception as ex:
+            raise ex
+
+    def getHotspotUserID(self, name:str) -> str:
+        try:
+            userList = self.getHotspotUserList()
+            for user in userList:
+                if user['name'] == name:
+                    return user['id']
         except Exception as ex:
             raise ex
