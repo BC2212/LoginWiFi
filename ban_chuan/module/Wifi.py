@@ -1,7 +1,6 @@
 import socket                       # Lấy MAC và IP
 import logging                      # Hiển thị thông báo trên Terminal
 import aiohttp
-import json
 from datetime import datetime
 
 from aiohttp import web             # Viết và gọi API
@@ -20,18 +19,18 @@ class Wifi:
         self.router = router
 
     async def getHomepage(self, request) -> 'web.HTTPException':
-        text = "Đây là homepage clb mạng LHU-CISCO"
+        text = 'Đây là homepage clb mạng LHU-CISCO'
         return web.HTTPOk(text=text)
 
     async def getIP(self, request) -> 'web.HTTPException':
-        """Lấy địa chỉ IP
+        '''Lấy địa chỉ IP
 
         Args:
             request (_type_): HTTP Request
 
         Returns:
             Response: Trả về địa chỉ IP qua HTTP Response
-        """
+        '''
         # Lấy tên thiết bị
         try:
             hostname = socket.gethostname()
@@ -42,7 +41,7 @@ class Wifi:
             return web.HTTPError()
 
     async def loginHotspot(self, request) -> 'web.HTTPException':
-        """Đăng nhập vào router để client có thể kết nối mạng
+        '''Đăng nhập vào router để client có thể kết nối mạng
 
         Args:
             request (_type_): HTTP Request
@@ -50,29 +49,29 @@ class Wifi:
         Returns:
             _type_: Trả về kết quả đăng nhập thành công hay không.
                     Nếu không trả về lỗi.
-        """
+        '''
         try:
             print('----------------------')
-            logging.info("Đã nhận được yêu cầu. Đang xử lý...")
+            logging.info('Đã nhận được yêu cầu. Đang xử lý...')
 
             # Trích xuất dữ liệu của request từ json thành dict
             dataRequest = await request.json()
             # Tách dữ liệu thành các biến
             user = UserHotspot(
-                ip=dataRequest["ip"],
-                mac=dataRequest["mac-address"],
-                username=dataRequest["user"],
-                password=dataRequest["password"]
+                ip=dataRequest['ip'],
+                mac=dataRequest['mac-address'],
+                username=dataRequest['user'],
+                password=dataRequest['password']
             )
 
             logging.info(
-                f"Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}")
+                f'Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}')
 
             self.router.login(user=user)
 
             # Thông báo nếu đăng nhập thành công
             logging.info('Login thành công!')
-            return web.HTTPOk(text="Login thành công")
+            return web.HTTPOk(text='Login thành công')
         except Exception as ex:
             # Kiểm tra lý do gây lỗi
             err = APIException.identify(str(ex))
@@ -80,15 +79,16 @@ class Wifi:
             return web.HTTPInternalServerError(text=str(err))
 
     async def getMemberList(self, request) -> 'web.HTTPException':
-        """Lấy danh sách thành viên hiện tại của câu lạc bộ
+        '''Lấy danh sách thành viên hiện tại của câu lạc bộ
 
         Args:
             request (_type_): HTTP Request
 
         Returns:
             web.HTTPException: Trả về số lượng, danh sách các thành viên hiện tại
-        """
-        request = LRequest(url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien")
+        '''
+        request = LRequest(
+            url='https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien')
         result = dict()
 
         async with aiohttp.ClientSession() as session:
@@ -100,45 +100,46 @@ class Wifi:
                 result['SoLuongThanhVien'] = count
                 result['DanhSachThanhVien'] = listUsers
 
-        return web.HTTPOk(body=json.dumps(result), content_type="application/json")
+        return web.HTTPOk(text=str(result), content_type='application/json')
 
     async def getTotalNumberOfMembers(self, request) -> 'web.HTTPException':
-        """Lấy tổng số lượng thành viên hiện tại
+        '''Lấy tổng số lượng thành viên hiện tại
 
         Args:
             request (_type_): HTTP Request
 
         Returns:
             web.HTTPException: Trả về tổng số lượng thành viên hiện tại
-        """
-        request = LRequest(url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien")
-        
+        '''
+        request = LRequest(
+            url='https://tapi.lhu.edu.vn/nema/auth/CLB_Select_AllThanhVien')
+
         async with aiohttp.ClientSession() as session:
             async with session.get(url=request.url) as response:
                 requestData = await response.json()
-                listUsers = requestData["data"]
+                listUsers = requestData['data']
                 count = len(listUsers)
-        
+
         return web.HTTPOk(text=str(count))
 
     async def getLoggonListByDate(self, request) -> 'web.HTTPException':
-        """Lấy danh sách các thành viên đã đăng nhập theo ngày
+        '''Lấy danh sách các thành viên đã đăng nhập theo ngày
 
         Args:
             request (_type_): HTTP Request. Date có format là yyyy-MM-dd
 
         Returns:
             web.HTTPException: Trả về danh sách các thành viên đã đăng nhập, có check đi trễ
-        """
+        '''
 
-        if request.method == "GET":
+        if request.method == 'GET':
             date = str(request.match_info['date'])
         else:
             requestData = await request.json()
             date = requestData['Date']
 
         request = LRequest(
-            url="https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate",
+            url='https://tapi.lhu.edu.vn/nema/auth/CLB_DiemDanh_Select_byDate',
         )
 
         lateTime = datetime.strptime('18:30:00', '%H:%M:%S').time()
@@ -152,11 +153,11 @@ class Wifi:
                 countLate = 0
 
                 for user in users[:]:
-                    _date = user.pop("ThoiGian")
-                    date = _date.split("T")[0]
+                    _date = user.pop('ThoiGian')
+                    date = _date.split('T')[0]
                     user['Ngay'] = date
 
-                    _time = user.pop("ThoiGianDiemDanh")
+                    _time = user.pop('ThoiGianDiemDanh')
                     loggonTime = datetime.strptime(_time, '%H:%M:%S').time()
                     user['Gio'] = str(loggonTime)
 
@@ -172,4 +173,136 @@ class Wifi:
                 result['SoLuongCoMat'] = len(users)
                 result['SoLuongTre'] = countLate
                 result['DanhSachCoMat'] = users
-        return web.HTTPOk(body=json.dumps(result), content_type="application/json")
+        return web.HTTPOk(text=str(result), content_type='application/json')
+
+    async def getHotspotUserList(self, request) -> 'web.HTTPException':
+        """Lấy danh sách tài khoản của thành viên trên router Mikrotik
+
+        Args:
+            request (_type_): HTTP Request
+
+        Returns:
+            web.HTTPException: Trả về HTTP Response danh sách các tài khoản trên router Mikrotik
+        """
+        try:
+            list = self.router.getHotspotUserList()
+            return web.HTTPOk(text=str(list))
+        except Exception as ex:
+            return web.HTTPInternalServerError(text=str(ex))
+
+    async def createMember(self, request) -> 'web.HTTPException':
+        """Gồm 2 phần:
+                1. Tạo thành viên trong database
+                2. Tạo tài khoản trên router Mikrotik
+
+        Args:
+            request (_type_): HTTP Request với dữ liệu dưới dạng:
+                {
+                    "username": "111222333",
+                    "mssv": "111222333",
+                    "ho": "Nguyễn Văn",
+                    "ten": "A",
+                    "ngaysinh": "2000-01-22",
+                    "lop": "22CT111",
+                    "email": "nguyenvana@gmail.com",
+                    "sdt": "0987654321"
+                }
+
+        Returns:
+            web.HTTPException: Nếu tạo thành công, trả về kết quả tạo thành công. Nếu tạo không thành công, trả về lỗi
+        """
+        try:
+            dataRequest = await request.json()
+            user = UserHotspot(
+                username=dataRequest['username'],
+                profile='student',
+                mssv=dataRequest['mssv'],
+                ho=dataRequest['ho'],
+                ten=dataRequest['ten'],
+                ngaysinh=dataRequest['ngaysinh'],
+                lop=dataRequest['lop'],
+                email=dataRequest['email'],
+                sdt=dataRequest['sdt'],
+                password='1'
+            )
+
+            data = {
+                'MSSV': user.mssv,
+                'HoSV': user.ho,
+                'TenSV': user.ten,
+                'NgaySinh': user.ngaysinh,
+                'Lop': user.lop,
+                'Email': user.email,
+                'DienThoai': user.sdt
+            }
+
+            request = LRequest(
+                url='https://tapi.lhu.edu.vn/nema/auth/CLB_ThanhVien_Insert')
+
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=request.url, json=data) as response:
+                    result = await response.json()
+
+            # self.router.createHotspotUser(user=user)
+            return web.HTTPOk(text=str(result))
+        except Exception as ex:
+            return web.HTTPInternalServerError()
+
+    async def getHotspotUserID(self, request) -> 'web.HTTPException':
+        """Lấy ID của tài khoản trên router Mikrotik
+
+        Args:
+            request (_type_): HTTP Request với dữ liệu dưới dạng:
+                {
+                    "username": "111222333"
+                }
+
+        Returns:
+            web.HTTPException: Trả về UserID của tài khoản
+        """
+        try:
+            dataRequest = await request.json()
+            id = self.router.getHotspotUserID(username=dataRequest['username'])
+            return web.HTTPOk(text=id)
+        except Exception as ex:
+            return web.HTTPInternalServerError(text=str(ex))
+
+    async def removeHotspotUser(self, request) -> 'web.HTTPException':
+        """Xoá tài khoản của thành viên trên router Mikrotik
+
+        Args:
+            request (_type_): HTTP Request truyền dữ liệu đầu vào dưới dạng:
+                {
+                    "username": "111222333"
+                }
+
+        Returns:
+            web.HTTPException: Nếu xoá thành công, trả về thông báo xoá thành công. Nếu không thành công, trả về lỗi
+        """
+        try:
+            dataRequest = await request.json()
+            self.router.removeHotspotUser(username=dataRequest['username'])
+            return web.HTTPOk(text='Remove completed')
+        except Exception as ex:
+            print(ex)
+            return web.HTTPInternalServerError(text='User did not exist')
+
+    async def createHotspotUser(self, request) -> 'web.HTTPException':
+        """Tạo tài khoản của user trên router Mikrotik
+
+        Args:
+            request (_type_): Truyền dữ liệu đầu vào dưới dạng:
+                {
+                    "username": "111222333"
+                }
+
+        Returns:
+            web.HTTPException: Nếu tạo thành công, trả về thông báo tạo thành công. Nếu không thành công, trả về lỗi
+        """
+        try:
+            dataRequest = await request.json()
+            user = UserHotspot(username=dataRequest['username'])
+            self.router.createHotspotUser(user=user)
+            return web.HTTPOk(text='User created')
+        except Exception as ex:
+            return web.HTTPInternalServerError(text='User exists')
