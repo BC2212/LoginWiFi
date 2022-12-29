@@ -4,26 +4,26 @@ from .model.UserHotspot import UserHotspot
 
 class RouterMikrotik:
     def __init__(self, host: str, username: str, password: str):
-        '''Khởi tạo object RouterMikrotik
+        """Khởi tạo object RouterMikrotik
 
         Args:
             host (str): Hostname hoặc địa chỉ IP của router
             username (str): Tên đăng nhập vào router
             password (str): Mật khẩu đăng nhập vào router
-        '''
+        """
         self.host = host
         self.username = username
         self.password = password
         self.api = self.connect()
 
     def connect(self) -> Any:
-        '''Dùng để kết nối đến Router Mikrotik
+        """Dùng để kết nối đến Router Mikrotik
 
         Args:
             host (str): Hostname hoặc địa chỉ IP của router
             username (str): Tài khoản để kết nối đến router
             password (str): Mật khẩu của tài khoản được kết nối đến router
-        '''
+        """
         try:
             # Tạo kết nối đến router với các parameter lấy được khi hàm được gọi
             connection = routeros_api.RouterOsApiPool(
@@ -131,5 +131,28 @@ class RouterMikrotik:
                 'numbers': id
             }
             print(remove.call('remove', params))
+        except Exception as ex:
+            raise ex
+
+    def editHotspotUser(self, user: UserHotspot) -> bool:
+        """Chỉnh sửa tài khoản của thành viên trên router Mikrotik
+
+        Args:
+            user (UserHotspot): Dữ liệu truyền vào
+
+        Returns:
+            bool: Trả về True nếu chỉnh sửa thành công
+        """
+        try:
+            id = self.getHotspotUserID(username=user.username)
+            edit = self.api.get_resource('ip/hotspot/user')
+            params = {
+                'numbers': id,
+                'profile': user.profile,
+                'name': user.username,
+                'password': user.password
+            }
+            edit.call('set', params)
+            return True
         except Exception as ex:
             raise ex

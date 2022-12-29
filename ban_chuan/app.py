@@ -26,11 +26,15 @@ app.add_routes([
     web.get('/lay-danh-sach-user', wifi.getHotspotUserList),
     #####################
     web.post('/login', wifi.loginHotspot),
-    web.post('/tao-thanh-vien', wifi.createMember),
+    web.post('/lay-thong-tin-thanh-vien', wifi.getMemberInfo),
+    web.post('/them-thanh-vien', wifi.addMember),
     web.post('/lay-danh-sach-dang-nhap', wifi.getLoggonListByDate),
     web.post('/lay-user-id', wifi.getHotspotUserID),
-    web.post('/xoa-thanh-vien', wifi.removeHotspotUser),
+    web.post('/xoa-thanh-vien', wifi.removeMember),
     web.post('/tao-user', wifi.createHotspotUser),
+    web.post('/chinh-sua-thanh-vien', wifi.editHotspotUser),
+    web.post('/doi-mat-khau', wifi.changePassword),
+    web.post('/xoa-tai-khoan', wifi.removeHotspotUser)
 ])
 
 # Khởi tạo Cross-Origin Resource Sharing (cors)
