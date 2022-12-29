@@ -347,6 +347,18 @@ class Wifi:
         except Exception as ex:
             return web.HTTPInternalServerError(text=str(ex))
 
+    async def changeUsername(self, request):
+        try:
+            dataRequest = await request.json()
+            user = UserHotspot(
+                username=dataRequest['username']
+            )
+
+            self.router.editHotspotUser(user=user)
+            return web.HTTPOk(text='Change username successful')
+        except Exception as ex:
+            return web.HTTPInternalServerError(text=str(ex))
+
     async def getMemberInfo(self, request) -> 'web.HTTPException':
         try:
             dataRequest = await request.json()
