@@ -2,6 +2,7 @@ import socket                       # Lấy MAC và IP
 import logging                      # Hiển thị thông báo trên Terminal
 import aiohttp
 import json
+import copy
 from datetime import datetime
 
 from aiohttp import web             # Viết và gọi API
@@ -59,10 +60,10 @@ class Wifi:
             dataRequest = await request.json()
             # Tách dữ liệu thành các biến
             user = UserHotspot(
-                ip=dataRequest['ip'],
-                mac=dataRequest['mac-address'],
-                username=dataRequest['user'],
-                password=dataRequest['password']
+                ip=dataRequest['IP'],
+                mac=dataRequest['Mac-Address'],
+                username=dataRequest['Username'],
+                password=dataRequest['Password']
             )
 
             logging.info(
@@ -95,12 +96,19 @@ class Wifi:
         async with aiohttp.ClientSession() as session:
             async with session.get(url=request.url) as response:
                 requestData = await response.json()
-                listUsers = requestData['data']
+                listUsers = copy.copy(requestData['data'])
                 count = len(listUsers)
                 # Tạm tạo thêm username bằng mssv
                 # Sau khi anh Lực thêm cột username vào database sẽ xoá đoạn này
                 for user in listUsers:
-                    user['username'] = user['MSSV']
+                    user['Username'] = user['MSSV']
+                    hoten = user.pop('HoTen')
+                    try:
+                        user['Ho'] = hoten[:hoten.rindex(' ')]
+                        user['Ten'] = hoten[hoten.rindex(' ')+1:]
+                    except:
+                        user['Ho'] = None
+                        user['Ten'] = None
 
                 result['SoLuongThanhVien'] = count
                 result['DanhSachThanhVien'] = listUsers
@@ -203,14 +211,14 @@ class Wifi:
         Args:
             request (_type_): HTTP Request với dữ liệu dưới dạng:
                 {
-                    'username': '111222333',
-                    'mssv': '111222333',
-                    'ho': 'Nguyễn Văn',
-                    'ten': 'A',
-                    'ngaysinh': '2000-01-22',
-                    'lop': '22CT111',
-                    'email': 'nguyenvana@gmail.com',
-                    'sdt': '0987654321'
+                    'Username': '111222333',
+                    'MSSV': '111222333',
+                    'Ho': 'Nguyễn Văn',
+                    'Ten': 'A',
+                    'NgaySinh': '2000-01-22',
+                    'Lop': '22CT111',
+                    'Email': 'nguyenvana@gmail.com',
+                    'DienThoai': '0987654321'
                 }
 
         Returns:
@@ -219,19 +227,17 @@ class Wifi:
         try:
             dataRequest = await request.json()
             user = UserHotspot(
-                username=dataRequest['username'],
+                username=dataRequest['Username'],
                 profile='student',
-                mssv=dataRequest['mssv'],
-                ho=dataRequest['ho'],
-                ten=dataRequest['ten'],
-                ngaysinh=dataRequest['ngaysinh'],
-                lop=dataRequest['lop'],
-                email=dataRequest['email'],
-                sdt=dataRequest['sdt'],
+                mssv=dataRequest['MSSV'],
+                ho=dataRequest['Ho'],
+                ten=dataRequest['Ten'],
+                ngaysinh=dataRequest['NgaySinh'],
+                lop=dataRequest['Lop'],
+                email=dataRequest['Email'],
+                sdt=dataRequest['DienThoai'],
                 password='1'
             )
-
-            print(user)
 
             data = {
                 'MSSV': user.mssv,
@@ -261,7 +267,7 @@ class Wifi:
         Args:
             request (_type_): HTTP Request với dữ liệu dưới dạng:
                 {
-                    'username': '111222333'
+                    'Username': '111222333'
                 }
 
         Returns:
@@ -269,7 +275,7 @@ class Wifi:
         """
         try:
             dataRequest = await request.json()
-            id = self.router.getHotspotUserID(username=dataRequest['username'])
+            id = self.router.getHotspotUserID(username=dataRequest['Username'])
             return web.HTTPOk(text=id)
         except Exception as ex:
             return web.HTTPInternalServerError(text=str(ex))
@@ -280,7 +286,7 @@ class Wifi:
         Args:
             request (_type_): HTTP Request truyền dữ liệu đầu vào dưới dạng:
                 {
-                    'username': '111222333'
+                    'Username': '111222333'
                 }
 
         Returns:
@@ -288,7 +294,7 @@ class Wifi:
         """
         try:
             dataRequest = await request.json()
-            self.router.removeHotspotUser(username=dataRequest['username'])
+            self.router.removeHotspotUser(username=dataRequest['Username'])
             return web.HTTPOk(text='Remove completed')
         except Exception as ex:
             print(ex)
@@ -300,7 +306,7 @@ class Wifi:
         Args:
             request (_type_): Truyền dữ liệu đầu vào dưới dạng:
                 {
-                    'username': '111222333'
+                    'Username': '111222333'
                 }
 
         Returns:
@@ -308,7 +314,7 @@ class Wifi:
         """
         try:
             dataRequest = await request.json()
-            user = UserHotspot(username=dataRequest['username'])
+            user = UserHotspot(username=dataRequest['Username'])
             self.router.createHotspotUser(user=user)
             return web.HTTPOk(text='User created')
         except Exception as ex:
@@ -318,15 +324,15 @@ class Wifi:
         try:
             dataRequest = await request.json()
             user = UserHotspot(
-                username=dataRequest['username'],
-                profile=dataRequest['profile'],
-                mssv=dataRequest['mssv'],
-                ho=dataRequest['ho'],
-                ten=dataRequest['ten'],
-                ngaysinh=dataRequest['ngaysinh'],
-                lop=dataRequest['lop'],
-                email=dataRequest['email'],
-                sdt=dataRequest['sdt']
+                username=dataRequest['Username'],
+                profile=dataRequest['Profile'],
+                mssv=dataRequest['MSSV'],
+                ho=dataRequest['Ho'],
+                ten=dataRequest['Ten'],
+                ngaysinh=dataRequest['NgaySinh'],
+                lop=dataRequest['Lop'],
+                email=dataRequest['Email'],
+                sdt=dataRequest['DienThoai']
             )
 
             self.router.editHotspotUser(user=user)
@@ -338,8 +344,8 @@ class Wifi:
         try:
             dataRequest = await request.json()
             user = UserHotspot(
-                username=dataRequest['username'],
-                password=dataRequest['password']
+                username=dataRequest['Username'],
+                password=dataRequest['Password']
             )
 
             self.router.editHotspotUser(user=user)
@@ -351,7 +357,7 @@ class Wifi:
         try:
             dataRequest = await request.json()
             user = UserHotspot(
-                username=dataRequest['username']
+                username=dataRequest['Username']
             )
 
             self.router.editHotspotUser(user=user)
@@ -368,7 +374,11 @@ class Wifi:
             async with aiohttp.ClientSession() as session:
                 async with session.post(url=request.url, json={'MSSV': dataRequest['mssv']}) as response:
                     responseData = await response.json()
-            return web.HTTPOk(body=json.dumps(responseData['data'][0]), content_type='application/json')
+                    member = copy.copy(responseData['data'][0])
+                    hoten = member.pop('HoTen')
+                    member['Ho'] = hoten[:hoten.rindex(' ')]
+                    member['Ten'] = hoten[hoten.rindex(' ')+1:]
+            return web.HTTPOk(body=json.dumps(member), content_type='application/json')
         except Exception as ex:
             try:
                 return web.HTTPInternalServerError(text=responseData['Message'])
@@ -387,7 +397,17 @@ class Wifi:
                     responseData = await response.json()
                     result = responseData['data']
 
-            self.router.removeHotspotUser(username=dataRequest['username'])
+            self.router.removeHotspotUser(username=dataRequest['Username'])
             return web.HTTPOk(text='Member deleted') 
         except Exception as ex:
             return web.HTTPInternalServerError(text='Member not found')
+
+    async def editMember(self, request) -> 'web.HTTPException':
+        try:
+            dataRequest = await request.json()
+            user = UserHotspot(
+                username=dataRequest['Username'],
+                mssv=dataRequest['MSSV'],
+            )
+        except:
+            pass

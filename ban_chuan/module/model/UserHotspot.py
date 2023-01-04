@@ -6,6 +6,7 @@ class UserHotspot:
         self.username = username
         self.password = password
         self.profile = profile
+        self.userid = kwargs.get('userid', '')
         self.mssv = kwargs.get('mssv','')
         self.ho = kwargs.get('ho','')
         self.ten = kwargs.get('ten','')

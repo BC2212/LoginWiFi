@@ -32,7 +32,7 @@ app.add_routes([
     web.post('/lay-user-id', wifi.getHotspotUserID),
     web.post('/xoa-thanh-vien', wifi.removeMember),
     web.post('/tao-user', wifi.createHotspotUser),
-    web.post('/chinh-sua-thanh-vien', wifi.editHotspotUser),
+    web.post('/chinh-sua-thanh-vien', wifi.editMember),
     web.post('/doi-mat-khau', wifi.changePassword),
     web.post('/xoa-tai-khoan', wifi.removeHotspotUser)
 ])
