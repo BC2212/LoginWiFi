@@ -297,7 +297,6 @@ class Wifi:
             self.router.removeHotspotUser(username=dataRequest['Username'])
             return web.HTTPOk(text='Remove completed')
         except Exception as ex:
-            print(ex)
             return web.HTTPInternalServerError(text='User did not exist')
 
     async def createHotspotUser(self, request) -> 'web.HTTPException':
@@ -407,9 +406,24 @@ class Wifi:
     async def editMember(self, request) -> 'web.HTTPException':
         try:
             dataRequest = await request.json()
-            user = UserHotspot(
-                username=dataRequest['Username'],
-                mssv=dataRequest['MSSV'],
-            )
-        except:
-            pass
+            data = {
+                "UserID": dataRequest['UserID'],
+                "HoSV": dataRequest['Ho'],
+                "TenSV": dataRequest['Ten'],
+                "Lop": dataRequest['Lop'],
+                "NgaySinh": dataRequest['NgaySinh'],
+                "Email": dataRequest['Email'],
+                "DienThoai": dataRequest['DienThoai']
+            }
+
+            request = LRequest(url='https://tapi.lhu.edu.vn/nema/auth/CLB_ThanhVien_Update')
+            async with aiohttp.ClientSession() as session:
+                async with session.post(url=request.url, json=data) as response:
+                    responseData = await response.json()
+                    try:
+                        responseData['data']
+                    except:
+                        raise Exception(responseData['Message'])
+                    return web.HTTPOk(text='Edit successful')
+        except Exception as ex:
+            return web.HTTPInternalServerError(text=str(ex))
