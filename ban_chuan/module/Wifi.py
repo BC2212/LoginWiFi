@@ -372,7 +372,7 @@ class Wifi:
                 url="https://tapi.lhu.edu.vn/nema/auth/CLB_Select_ThanhVien_byMSSV"
             )
             async with aiohttp.ClientSession() as session:
-                async with session.post(url=request.url, json={'MSSV': dataRequest['mssv']}) as response:
+                async with session.post(url=request.url, json={'MSSV': dataRequest['MSSV']}) as response:
                     responseData = await response.json()
                     member = copy.copy(responseData['data'][0])
                     hoten = member.pop('HoTen')
@@ -381,8 +381,10 @@ class Wifi:
             return web.HTTPOk(body=json.dumps(member), content_type='application/json')
         except Exception as ex:
             try:
+                # Trả về thông báo lỗi đã nhận được từ database (nếu có)
                 return web.HTTPInternalServerError(text=responseData['Message'])
             except:
+                # Trả về thông báo thành viên đã bị xoá nếu dữ liệu nhận được từ database là rỗng
                 return web.HTTPInternalServerError(text='Member was deleted')
 
     async def removeMember(self, request) -> 'web.HTTPException':
