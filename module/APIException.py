@@ -25,6 +25,10 @@ class APIException:
         {
             "errStr": ".target machine actively refused it.*",
             "reason": "Sai hostname hoặc địa chỉ IP của router"
+        },
+        {
+            "errStr": "'Data'",
+            "reason": "Token invalid"
         }
     ]
 
