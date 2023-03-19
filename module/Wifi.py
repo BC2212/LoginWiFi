@@ -55,30 +55,102 @@ class Wifi:
         try:
             print('----------------------')
             logging.info('Đã nhận được yêu cầu. Đang xử lý...')
-
+            token = request.headers.get('Authorization')
             # Trích xuất dữ liệu của request từ json thành dict
             dataRequest = await request.json()
             # Tách dữ liệu thành các biến
             user = UserHotspot(
+                token=str(token),
                 ip=dataRequest['IP'],
-                mac=dataRequest['Mac-Address'],
-                username=dataRequest['Username'],
-                password=dataRequest['Password']
+                mac=dataRequest['Mac-Address']
             )
+        
+            try:
+                async with aiohttp.ClientSession() as session:
+                    # Kiểm tra hợp đồng
+                    myRequest = LRequest(
+                        url='https://app.lhu.edu.vn/api/tokenvalidate',
+                        authorization=str(user.token)
+                    )
 
-            logging.info(
-                f'Yêu cầu được gửi bởi người dùng tên {user.username} có địa chỉ IP là {user.ip}')
+                    # Kiểm tra token thuộc về nhân viên hay sinh viên
+                    async with session.get(url=myRequest.url, headers=myRequest.headers) as response:
+                        dataResponse = await response.json()
+                        data = dataResponse['Data']
+                        user.username = data['UserID'].lower()
 
-            self.router.login(user=user)
+                        # Nếu GroupID=1 là nhân viên, =2 là sinh viên
+                        if data['GroupID'] == 1:
+                            # Kiểm tra user đã tồn tại trên router Mikrotik hay chưa
+                            hotspotUserID = ''
+                            hotspotUserID = self.router.getHotspotUserID(username=data['UserID'].lower())
+                            # Nếu user đã tồn tại, cho login
+                            if len(hotspotUserID) != 0:
+                                self.router.login(user)
+                            # Nếu chưa tồn tại, tạo rồi login
+                            else:
+                                self.router.createHotspotUser(user)
+                                self.router.login(user)
+                        # Kiểm tra hợp đồng của sinh viên
+                        else:
+                            myRequest.url = 'https://tapi.lhu.edu.vn/ktx/obj/2022_wifi_kiemtrahopdong'
 
-            # Thông báo nếu đăng nhập thành công
-            logging.info('Login thành công!')
+                            async with session.get(url=myRequest.url, headers=myRequest.headers) as response:
+                                dataResponse = await response.json()
+                                data = dataResponse['data']
+                
+                                # Kiểm tra tài khoản sinh viên có được phép đăng nhập hay không
+                                if data['TinhTrangHopDong']:
+                                    async with session.get(url='http://localhost:8080/check-token-valid', headers={'Authorization': user.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}) as newResponse:
+                                        newResponse = await newResponse.json()
+                                    user.userid = newResponse['UserID']
+                                    user.username = newResponse['UserID']
+
+                                    # Nếu có hợp đồng, kiểm tra tài khoản hotspot có tồn tại hay chưa
+                                    hotspotUserID = ''
+                                    hotspotUserID = self.router.getHotspotUserID(username=user.userid.lower())
+                                    if len(hotspotUserID) != 0:
+                                        self.router.login(user)
+                                    else:
+                                        self.router.createHotspotUser(user)
+                                        self.router.login(user)
+
+                                # Nếu không có hợp đồng hoặc hết hạn thì thông báo lỗi hợp đồng
+                                else:
+                                    return web.HTTPOk(body=json.dumps({"Message": data['ThongBao']}), headers={'Content-Type': 'application/json'})
+            except Exception as ex:
+                print(ex)
+            # self.router.login(user=user)
+
+            # # Thông báo nếu đăng nhập thành công
+            # logging.info('Login thành công!')
             return web.HTTPOk(text='Login thành công')
         except Exception as ex:
             # Kiểm tra lý do gây lỗi
             err = APIException.identify(str(ex))
             logging.error(err)
             return web.HTTPInternalServerError(text=str(err))
+
+    async def getUserIDViaToken(self, request) -> 'web.HTTPException':
+        try:
+            user = UserHotspot(token=request.headers.get('Authorization'))
+            getIDRequest = LRequest(
+                url='https://app.lhu.edu.vn/api/tokenvalidate',
+                authorization=str(user.token)
+            )
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url=getIDRequest.url, headers=getIDRequest.headers) as response:
+                    try:
+                        dataResponse = await response.json()
+                        result = {}
+                        result['UserID'] = dataResponse['Data']['UserID']
+
+                    except:
+                        dataReqsponse = await response.json()
+                        return web.HTTPForbidden(body=json.dumps({'Message': dataResponse['Message']}), headers={'Content-Type':'application/json'})
+            return web.HTTPOk(body=json.dumps(result), headers={'Content-Type':'application/json'})
+        except Exception as ex:
+            return web.HTTPForbidden(body=json.dumps({"Message": "Unidentify error"}), headers={'Content-Type':'application/json'})
 
     async def getMemberList(self, request) -> 'web.HTTPException':
         """Lấy danh sách thành viên hiện tại của câu lạc bộ

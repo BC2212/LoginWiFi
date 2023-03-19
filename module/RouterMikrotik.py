@@ -36,7 +36,7 @@ class RouterMikrotik:
         except Exception as ex:
             raise ex
 
-    def login(self, user: UserHotspot) -> bool:
+    def login(self, user: 'UserHotspot') -> bool:
         """Thành viên đăng nhập vào router Mikrotik để sử dụng Internet
 
         Args:
@@ -111,7 +111,8 @@ class RouterMikrotik:
             for user in userList:
                 if user['name'] == username:
                     return user['id']
-            raise Exception('User did not exist')
+            # raise Exception('User did not exist')
+            return ''
         except Exception as ex:
             raise ex
 
