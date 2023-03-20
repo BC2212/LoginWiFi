@@ -100,7 +100,7 @@ class Wifi:
             
                             # Kiểm tra tài khoản sinh viên có được phép đăng nhập hay không
                             if data['TinhTrangHopDong']:
-                                async with session.get(url='http://localhost:8080/check-token-valid', headers={'Authorization': user.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}) as newResponse:
+                                async with session.get(url='http://localhost:8000/check-token-valid', headers={'Authorization': user.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}) as newResponse:
                                     newResponse = await newResponse.json()
                                     user.userid = newResponse['UserID']
                                     user.username = newResponse['UserID']
@@ -143,6 +143,7 @@ class Wifi:
                         return web.HTTPForbidden(body=json.dumps({'Message': dataResponse['Message']}), headers={'Content-Type':'application/json'})
             return web.HTTPOk(body=json.dumps(result), headers={'Content-Type':'application/json'})
         except Exception as ex:
+            print(ex)
             return web.HTTPForbidden(body=json.dumps({"Message": "Unidentify error"}), headers={'Content-Type':'application/json'})
 
     async def getMemberList(self, request) -> 'web.HTTPException':
