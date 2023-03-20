@@ -51,7 +51,7 @@ class RouterMikrotik:
             # Lấy resource từ router
             login = self.api.get_resource('/ip/hotspot/active')
             params = {
-                'user': str(user.username),
+                'user': str(user.userid),
                 'password': str(user.password),
                 'mac-address': str(user.mac),
                 'ip': str(user.ip),
@@ -74,10 +74,13 @@ class RouterMikrotik:
         """
         try:
             init = self.api.get_resource('ip/hotspot/user')
+            print(user.limitUptime)
             params = {
-                'name': user.username,
+                'name': user.userid,
                 'password': user.password,
-                'profile': user.profile
+                'profile': user.profile,
+                'limit-uptime': user.limitUptime,
+                'server': user.server
             }
             init.call('add', params)
             return True
@@ -135,7 +138,7 @@ class RouterMikrotik:
         except Exception as ex:
             raise ex
 
-    def editHotspotUser(self, user: UserHotspot) -> bool:
+    def editHotspotUser(self, user: 'UserHotspot') -> bool:
         """Chỉnh sửa tài khoản của thành viên trên router Mikrotik
 
         Args:
@@ -145,13 +148,15 @@ class RouterMikrotik:
             bool: Trả về True nếu chỉnh sửa thành công
         """
         try:
-            id = self.getHotspotUserID(username=user.username)
+            id = self.getHotspotUserID(username=user.userid)
             edit = self.api.get_resource('ip/hotspot/user')
             params = {
                 'numbers': id,
                 'profile': user.profile,
-                'name': user.username,
-                'password': user.password
+                'name': user.userid,
+                'password': user.password,
+                'server': user.server,
+                'limit-uptime': user.limitUptime
             }
             edit.call('set', params)
             return True

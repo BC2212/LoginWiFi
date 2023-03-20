@@ -42,7 +42,7 @@ class Wifi:
         except Exception as ex:
             return web.HTTPError()
 
-    async def loginHotspot(self, request) -> 'web.HTTPException':
+    async def loginViaToken(self, request) -> 'web.HTTPException':
         """Đăng nhập vào router để client có thể kết nối mạng
 
         Args:
@@ -76,15 +76,18 @@ class Wifi:
                 async with session.get(url=myRequest.url, headers=myRequest.headers) as response:
                     dataResponse = await response.json()
                     data = dataResponse['Data']
-                    user.username = data['UserID'].lower()
+                    user.userid = data['UserID'].lower()
 
                     # Nếu GroupID=1 là nhân viên, =2 là sinh viên
                     if data['GroupID'] == 1:
                         # Kiểm tra user đã tồn tại trên router Mikrotik hay chưa
                         hotspotUserID = ''
-                        hotspotUserID = self.router.getHotspotUserID(username=data['UserID'].lower())
+                        hotspotUserID = self.router.getHotspotUserID(username=user.userid)
+                        user.limitUptime='5d 00:00:00'
+
                         # Nếu user đã tồn tại, cho login
                         if len(hotspotUserID) != 0:
+                            self.router.editHotspotUser(user)
                             self.router.login(user)
                         # Nếu chưa tồn tại, tạo rồi login
                         else:
@@ -103,12 +106,14 @@ class Wifi:
                                 async with session.get(url='http://localhost:8000/check-token-valid', headers={'Authorization': user.token, 'Content-Type': 'application/json', 'Accept': 'application/json'}) as newResponse:
                                     newResponse = await newResponse.json()
                                     user.userid = newResponse['UserID']
-                                    user.username = newResponse['UserID']
 
                                     # Nếu có hợp đồng, kiểm tra tài khoản hotspot có tồn tại hay chưa
                                     hotspotUserID = ''
                                     hotspotUserID = self.router.getHotspotUserID(username=user.userid.lower())
+                                    user.limitUptime='1d 00:00:00'
+
                                     if len(hotspotUserID) != 0:
+                                        self.router.edit(user)
                                         self.router.login(user)
                                     else:
                                         self.router.createHotspotUser(user)

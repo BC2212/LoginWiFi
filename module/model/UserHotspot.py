@@ -3,7 +3,6 @@ class UserHotspot:
     def __init__(self, ip='', mac='', username='', password='lhu@knt', profile='default', **kwargs) -> None:
         self.ip = ip
         self.mac = mac
-        self.username = username
         self.password = password
         self.profile = profile
         self.userid = kwargs.get('userid', '')
@@ -17,3 +16,5 @@ class UserHotspot:
         self.sdt = kwargs.get('sdt','')
         self.accountID = kwargs.get('accountID','')
         self.token = kwargs.get('token', '')
+        self.limitUptime = kwargs.get('limit-uptime', ''),
+        self.server = kwargs.get('server', 'hotspotKNT')

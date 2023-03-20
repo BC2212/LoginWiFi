@@ -26,7 +26,7 @@ app.add_routes([
     web.get('/lay-danh-sach-user', wifi.getHotspotUserList),
     web.get('/check-token-valid', wifi.getUserIDViaToken),
     #####################
-    web.post('/login', wifi.loginHotspot),
+    web.post('/login', wifi.loginViaToken),
     web.post('/lay-thong-tin-thanh-vien', wifi.getMemberInfo),
     web.post('/them-thanh-vien', wifi.addMember),
     web.post('/lay-danh-sach-dang-nhap', wifi.getLoggonListByDate),
